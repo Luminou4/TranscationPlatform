@@ -5,6 +5,7 @@ from models import db
 from routes.item_routes import item_bp
 from routes.user_routes import user_bp
 from routes.upload_routes import upload_bp
+from routes.order_routes import order_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -15,6 +16,7 @@ db.init_app(app)
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(upload_bp, url_prefix='/api')
 app.register_blueprint(item_bp, url_prefix='/api')
+app.register_blueprint(order_bp, url_prefix='/api')
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
