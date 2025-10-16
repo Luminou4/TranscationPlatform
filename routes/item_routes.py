@@ -15,9 +15,29 @@ def get_items():
         'name': i.name,
         'price': i.price,
         'description': i.description,
-        'image_urls': json.loads(i.image_urls or "[]"),
-        'create_time': i.create_time.isoformat()
+        'image_urls': i.image_urls,
+        'create_time': i.create_time.isoformat(),
+        'people_want': i.people_want
+
     } for i in items]))
+
+@item_bp.route('/items_my', methods=['GET'])
+@token_required
+def get_items_my(user_id):
+    items = Item.query.filter_by(user_id=user_id, is_deleted=False).all()
+    return jsonify(RequestResponse.success_response([{
+        'id': i.id,
+        'name': i.name,
+        'price': i.price,
+        'description': i.description,
+        'image_urls': i.image_urls,
+        'create_time': i.create_time.isoformat(),
+        'people_want': i.people_want
+
+    } for i in items]))
+
+
+
 
 @item_bp.route('/items/upload', methods=['POST'])
 @token_required
@@ -28,7 +48,8 @@ def upload_item(user_id):
         name=data.get('name'),
         description=data.get('description'),
         price=data.get('price'),
-        image_urls=json.dumps(data.get('images', []))
+        image_urls=data.get('image_url'),
+        people_want=data.get('peole_want'),
     )
     db.session.add(item)
     db.session.commit()
@@ -37,8 +58,9 @@ def upload_item(user_id):
         'name': item.name,
         'description': item.description,
         'price': item.price,
-        'image_urls': json.loads(item.image_urls or "[]"),
-        'create_time': item.create_time.isoformat()
+        'image_urls': item.image_urls,
+        'create_time': item.create_time.isoformat(),
+        'people_want': item.people_want
     }))
 
 @item_bp.route('/items/<int:item_id>', methods=['PUT'])
@@ -55,7 +77,7 @@ def update_item(user_id, item_id):
     item.name = data.get('name', item.name)
     item.description = data.get('description', item.description)
     item.price = data.get('price', item.price)
-    item.image_urls = json.dumps(data.get('images', json.loads(item.image_urls or "[]")))
+    item.image_urls = data.get('images', item.image_urls )
 
     db.session.commit()
     return jsonify(RequestResponse.success_response({}))
