@@ -108,8 +108,8 @@ def get_item_detail(item_id):
         'name': item.name,
         'description': item.description,
         'price': item.price,
-        'image_urls': json.loads(item.image_urls or "[]"),
-        'create_time': item.create_time.isoformat()
+        'image_urls': item.image_urls,
+        'people_want': item.people_want
     }))
 
 

@@ -17,7 +17,7 @@ def create_order(buyer_id):
     if not item:
         return jsonify(RequestResponse.error_response(code="999",msg="商品不存在"))
     if item.status != 0:
-        return jsonify(RequestResponse.error_response(code="999",msg="商品不可购买"))
+        return jsonify(RequestResponse.error_response(code="999",msg="商品已被购买"))
 
     if item.user_id == buyer_id:
         return jsonify(RequestResponse.error_response(code="999",msg="不能购买自己发布的商品"))
