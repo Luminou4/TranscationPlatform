@@ -1,4 +1,6 @@
 from flask import Blueprint, request, jsonify
+
+from model.request_response import RequestResponse
 from models import db, Item, Order
 from utils.auth import token_required
 from datetime import datetime
@@ -13,11 +15,13 @@ def create_order(buyer_id):
     item = Item.query.get(item_id)
 
     if not item:
-        return jsonify({'error': '商品不存在'}), 404
+        return jsonify(RequestResponse.error_response(code="999",msg="商品不存在"))
     if item.status != 0:
-        return jsonify({'error': '商品不可购买'}), 400
+        return jsonify(RequestResponse.error_response(code="999",msg="商品已被购买"))
+
     if item.user_id == buyer_id:
-        return jsonify({'error': '不能购买自己发布的商品'}), 400
+        return jsonify(RequestResponse.error_response(code="999",msg="不能购买自己发布的商品"))
+
 
     # 创建订单
     order = Order(
@@ -32,8 +36,8 @@ def create_order(buyer_id):
     item.status = 1
     db.session.add(order)
     db.session.commit()
+    return jsonify(RequestResponse.success_response({ 'order_id': order.id}))
 
-    return jsonify({'msg': '下单成功', 'order_id': order.id})
 
 @order_bp.route('/order/list', methods=['GET'])
 @token_required
@@ -54,63 +58,79 @@ def get_orders(user_id):
             'create_time': o.create_time.isoformat(),
             'update_time': o.update_time.isoformat()
         })
-    return jsonify(result)
+    return jsonify(RequestResponse.success_response(result))
+
 
 @order_bp.route('/items/<int:item_id>/unlist', methods=['PUT'])
 @token_required
 def unlist_item(user_id, item_id):
     item = Item.query.get(item_id)
     if not item:
-        return jsonify({'error': '商品不存在'}), 404
+        return jsonify(RequestResponse.error_response(code="999",msg="商品不存在"))
+
     if item.user_id != user_id:
-        return jsonify({'error': '无权下架他人商品'}), 403
+        return jsonify(RequestResponse.error_response(code="999",msg="无权下架他人商品"))
+
 
     item.status = 2  # 下架
     db.session.commit()
-    return jsonify({'msg': '商品已下架'})
+    return jsonify(RequestResponse.success_response({}))
+
 
 @order_bp.route('/order/<int:order_id>/ship', methods=['PUT'])
 @token_required
 def ship_order(user_id, order_id):
     order = Order.query.get(order_id)
     if not order:
-        return jsonify({'error': '订单不存在'}), 404
+        return jsonify(RequestResponse.error_response(code="999",msg="订单不存在"))
+
     if order.seller_id != user_id:
-        return jsonify({'error': '无权发货'}), 403
+        return jsonify(RequestResponse.error_response(code="999",msg="无权发货"))
+
     if order.status != 0:
-        return jsonify({'error': '订单状态错误，无法发货'}), 400
+        return jsonify(RequestResponse.error_response(code="999",msg="订单状态错误，无法发货"))
+
 
     order.status = 1  # 待收货
     order.update_time = datetime.utcnow()
     db.session.commit()
-    return jsonify({'msg': '发货成功'})
+    return jsonify(RequestResponse.success_response({}))
+
 
 @order_bp.route('/order/<int:order_id>/complete', methods=['PUT'])
 @token_required
 def complete_order(user_id, order_id):
     order = Order.query.get(order_id)
     if not order:
-        return jsonify({'error': '订单不存在'}), 404
+        return jsonify(RequestResponse.error_response(code="999",msg="订单不存在"))
+
+
     if order.buyer_id != user_id:
-        return jsonify({'error': '无权确认收货'}), 403
+        return jsonify(RequestResponse.error_response(code="999",msg="无权确认收货"))
+
     if order.status != 1:
-        return jsonify({'error': '订单状态错误，无法确认收货'}), 400
+        return jsonify(RequestResponse.error_response(code="999",msg="订单状态错误，无法确认收货"))
+
 
     order.status = 2  # 已完成
     order.update_time = datetime.utcnow()
     db.session.commit()
-    return jsonify({'msg': '确认收货成功'})
+    return jsonify(RequestResponse.success_response({}))
+
 
 @order_bp.route('/order/<int:order_id>/cancel', methods=['PUT'])
 @token_required
 def cancel_order(user_id, order_id):
     order = Order.query.get(order_id)
     if not order:
-        return jsonify({'error': '订单不存在'}), 404
+        return jsonify(RequestResponse.error_response(code="999",msg="订单不存在"))
+
     if order.buyer_id != user_id:
-        return jsonify({'error': '无权取消订单'}), 403
+        return jsonify(RequestResponse.error_response(code="999",msg="无权取消订单"))
+
     if order.status not in (0, 1):
-        return jsonify({'error': '订单状态错误，无法取消'}), 400
+        return jsonify(RequestResponse.error_response(code="999",msg="订单状态错误，无法取消"))
+
 
     order.status = 3  # 已取消
     order.update_time = datetime.utcnow()
@@ -121,4 +141,4 @@ def cancel_order(user_id, order_id):
         item.status = 0  # 重新上架
 
     db.session.commit()
-    return jsonify({'msg': '订单已取消'})
+    return jsonify(RequestResponse.success_response({}))

@@ -15,6 +15,7 @@ class Item(db.Model):
     name = db.Column(db.String(100))
     description = db.Column(db.Text)
     price = db.Column(db.Float)
+    people_want = db.Column(db.Integer)
     image_urls = db.Column(db.Text)
     status = db.Column(db.Integer, default=0)   # 0上架 1卖出 2下架
     is_deleted = db.Column(db.Boolean, default=False)
